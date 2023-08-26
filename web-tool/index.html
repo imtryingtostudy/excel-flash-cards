@@ -2,23 +2,36 @@
 <html lang="en-US">
 
 <head>
-
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>ImTryingToStudy</title>
-
     <link rel="stylesheet" href="styles/buttons.css" />
+    <link rel="shortcut icon" href="#">
+
 </head>
 
 <body>
     <h3>Excel Flash Cards Tool</h3>
-    <img src="images/colorful-flash-cards.png" alt="Colorful Flash Cards Image" />
-    <p></p>
 
+    <!-- Store a reference to the statically stored excel template file -->
     <a href="imtryingtostudy-template.xlsx" download="flash-cards-template.txt"><button>Download Template</button></a>
-    <label class="user-flash-cards-file"><input type="file" />Upload Flashcards</label>
 
-    <script src="scripts/main.js"></script>
+    <!-- Obtain the users file -->
+    <label class="user-file">
+        <input type="file" />
+        <span class="">Upload Flashcards</span>
+    </label>
+
+    <!-- Render the flash card element -->
+    <label class="active-card">
+        <a name="deck_of_cards">Card</a>
+    </label>
+
+    <!-- Scripts -->
+    <script type="module" src="scripts/main.js"></script>
+    <script type="module" src="scripts/server-setup.js"></script>
+    <script lang="javascript" src="scripts/dist/xlsx.mini.flow.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
 
 </html>
