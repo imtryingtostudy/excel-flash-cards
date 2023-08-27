@@ -12,20 +12,42 @@
 
 <body>
     <h3>Excel Flash Cards Tool</h3>
-
-    <!-- Store a reference to the statically stored excel template file -->
-    <a href="imtryingtostudy-template.xlsx" download="flash-cards-template.txt"><button>Download Template</button></a>
-
-    <!-- Obtain the users file -->
-    <label class="user-file">
-        <input type="file" />
-        <span class="">Upload Flashcards</span>
-    </label>
+    <div class="grid-container">
+        <div class="button-container">
+            <!-- Store a reference to the statically stored excel template file -->
+            <a href="imtryingtostudy-template.xlsx" download="flash-cards-template.txt">
+                <button class="user-button">Download Template</button>
+            </a>
+        </div>
+        <div class="button-container">
+            <!-- Obtain the users file -->
+            <input type="file" id="inputFile" />
+            <button class="user-button" id="uploadButton">Upload Flashcards</button>
+        </div>
+    </div>
 
     <!-- Render the flash card element -->
-    <label class="active-card">
-        <a name="deck_of_cards">Card</a>
-    </label>
+    <div id="active-card" class="active-card-view">
+        <label for="active-card">Please upload a file</label>
+    </div>
+
+    <!-- Render next and previous card buttons -->
+    <div class="grid-container">
+        <div class="button-container">
+            <button class="user-button" id="next-card">Next Card</button>
+            <button class="user-button" id="previous-card">Previous Card</button>
+        </div>
+        <div class="button-container">
+            <button class="user-button" id="save-for-later">Add to Study Deck</button>
+            <button class="user-button" id="done-with-card">Done Studying</button>
+        </div>
+
+        <div class="button-container">
+            <button class="user-button" id="reset">Reset Deck</button>
+        </div>
+    </div>
+
+
 
     <!-- Scripts -->
     <script type="module" src="scripts/main.js"></script>
