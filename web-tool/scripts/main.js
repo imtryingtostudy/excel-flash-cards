@@ -10,7 +10,6 @@ const resetDecksButton = document.getElementById('reset');
 const saveForLaterButton = document.getElementById('save-for-later');
 const uploadButton = document.getElementById('uploadButton');
 
-
 /* ========================================================================= 
     Const Data Types 
 ========================================================================= */
@@ -31,29 +30,24 @@ const CardState = {
 /**
  * @brief A collection of all decks (sheets) read from the provided user file
  */
-var myDeckCollection = {};
+var myDeckCollection = new Map();
 
 /**
  * @brief A deck holding all the flash cards flagged for restudying
  */
-var myStudyPile = {};
+var myStudyPile = new Map();
 
 /**
  * @brief A deck holding all the flash cards flagged as studied
  */
-var myDonePile = {};
+var myDonePile = new Map();
 
 /**
  * @brief The current deck in the collection that is being studied by the user
  */
-var myCurrentDeckKey = {};
-var myCurrentDeck = {};
-
-/**
- * @brief The current flash card (key-value pair) that is being studied by the user
- */
-var myCurrentCardTerm = {};
-var myCurrentCardDefinition = {};
+var myCurrentDeck = new Map();
+var currentCardValue = null;
+var currentCardKey = null;
 
 /**
  * @brief The current number of decks in @myDeckCollection
@@ -80,78 +74,51 @@ var myCardState = CardState.term;
  */
 async function handleFileAsync(e) {
     const file = e.target.files[0];
+    if (!file) return;
 
-    if (file) {
-        console.log('Selected file: ', file);
-    } else {
-        console.log('No file selected.');
-        return;
-    }
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
 
-    // Read file and get metrics
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheets = workbook.SheetNames
-
-    numOfDecks = workbook.SheetNames.length;
-
-    // Iterate over each of our decks (sheets) and parse the data
-    for (var n = 0; n < sheets.length; n++) {
-        const sheetName = workbook.SheetNames[n];
-        const sheet = workbook.Sheets[sheetName];
-
-        // Initialize arrays to store columns A (terms) and B (definitions) from the template
-        let terms = [];
-        let definitions = [];
-
-        for (const cell in sheet) {
-            if (cell[0] === 'A' && sheet.hasOwnProperty(cell)) {
-                terms.push(sheet[cell].v);
-            }
-            if (cell[0] === 'B' && sheet.hasOwnProperty(cell)) {
-                definitions.push(sheet[cell].v);
-            }
+            workbook.SheetNames.forEach(function (sheetName) {
+                const worksheet = workbook.Sheets[sheetName];
+                const excelData = XLSX.utils.sheet_to_json(worksheet);
+                let deck = new Map();
+                excelData.forEach(row => {
+                    const key = row[Object.keys(row)[0]];
+                    const value = row[Object.keys(row)[1]];
+                    // Store all our key-value pairs in a local deck 
+                    deck.set(key, value);
+                })
+                // Store our deck with our subject (sheet) name in our deck collection
+                myDeckCollection.set(sheetName, deck);
+            });
+            console.log(myDeckCollection);
+        } catch (error) {
+            console.error("Error reading the file:", error);
         }
 
-        // Verify that every term has a defintion and pair them
-        let extractedCards = {};
+        // Now that all the decks have been made, store the data in the users browser
+        localStorage.setItem("decks", JSON.stringify(myDeckCollection));
 
-        if (terms.length === definitions.length) {
+        // Initialize our starting state
+        initialize();
+    };
 
-            // Iterate through each column and create the key value pair relationship
-            for (var i = 1; i < terms.length; i++) {
-                // Insert each flash card pairing into our dictionary for this sheet
-                extractedCards[terms[i]] = definitions[i];
-            }
-        } else {
-            alert("Please check that every Term-Value pair is filled in")
-        }
-
-        // Store the current list of terms and defintiions in our collection
-        myDeckCollection[sheetName] = extractedCards;
-    }
-
-    // Now that all the decks have been made, store the data in the users browser
-    localStorage.setItem("decks", JSON.stringify(myDeckCollection));
-
-    // Initialize our starting state
-    initialize();
+    // Read our excel file
+    reader.readAsBinaryString(file);
 }
 
-async function initialize() {
-    // Populate our variables using the first deck in our collection as default
-    console.log(myDeckCollection);
-    myCurrentDeckKey = Object.keys(myDeckCollection)[0];
-    myCurrentDeck = myDeckCollection[myCurrentDeckKey];
-    myCurrentCardTerm = Object.keys(myCurrentDeck)[0];
-    myCurrentCardDefinition = myCurrentDeck[myCurrentCardTerm];
-    numOfDecks = Object.keys(myDeckCollection).length; // Deck Collection Size
-    numOfCards = Object.keys(myCurrentDeck).length;
+function initialize() {
+    let myCurrentDeckKey = myDeckCollection.entries().next().value[0]; // Subject 1
+    myCurrentDeck = myDeckCollection.entries().next().value[1]; // Deck 1
 
-    // Store the card state
+    // Store the card state and change signifer text
     myCardState = CardState.newCard;
-
     currentCardButton.textContent = "Click to begin studying [insert subject here]";
+    moveToNextCard();
 }
 
 async function initializeNewDeck() {
@@ -162,15 +129,16 @@ async function updateCardState() {
     if (currentCardButton.textContent.trim() === "Please upload a file") {
         // Do nothing
     } else {
-
         switch (myCardState) {
             case CardState.term:
-                currentCardButton.textContent = myCurrentCardDefinition;
+                // We are currently displaying our term, update the display to the definition
+                currentCardButton.textContent = currentCardValue;
                 myCardState = CardState.definition;
                 break;
             case CardState.definition:
             case CardState.newCard:
-                currentCardButton.textContent = myCurrentCardTerm;
+                // We are currently displaying our definition, update the display to the ter
+                currentCardButton.textContent = currentCardKey;
                 myCardState = CardState.term;
                 break;
             default:
@@ -179,52 +147,57 @@ async function updateCardState() {
     }
 }
 
-async function updateNextCard() {
-    let keys = Object.keys(myCurrentDeck);
-    let nextIndex = (keys.indexOf(myCurrentCardTerm) + 1) % numOfCards;
-    let nextItem = keys[nextIndex];
-    myCurrentCardTerm = nextItem;
-    myCurrentCardDefinition = myCurrentDeck[myCurrentCardTerm];
-    currentCardButton.textContent = myCurrentCardTerm;
+function moveToNextCard() {
+    const keys = Array.from(myCurrentDeck.keys());
+
+    if (currentCardKey === null) {
+        currentCardKey = keys[0];
+        currentCardValue = myCurrentDeck.get(currentCardKey);
+        console.log(currentCardValue);
+        return;
+    }
+
+    const currentIndex = keys.indexOf(currentCardKey);
+    if (currentIndex !== -1 && currentIndex < keys.length - 1) {
+        currentCardKey = keys[currentIndex + 1];
+        currentCardValue = myCurrentDeck.get(currentCardKey);
+    }
+
     myCardState = CardState.newCard;
     updateCardState();
 }
 
-async function updatePreviousCard() {
-    let keys = Object.keys(myCurrentDeck);
-    let previousIndex = (keys.indexOf(myCurrentCardTerm) - 1) % numOfCards;
-    let previousItem = keys[previousIndex];
-    myCurrentCardTerm = previousItem
-    myCurrentCardDefinition = myCurrentDeck[myCurrentCardTerm];
-    currentCardButton.textContent = myCurrentCardTerm;
+// Function to move backward to the previous element in the map
+function moveToPreviousCard() {
+    const keys = Array.from(myCurrentDeck.keys());
+
+    if (currentCardKey === null) {
+        currentCardKey = keys[keys.length - 1];
+        currentCardValue = myCurrentDeck.get(currentCardKey);
+        return;
+    }
+
+    const currentIndex = keys.indexOf(currentCardKey);
+    if (currentIndex !== -1 && currentIndex > 0) {
+        currentCardKey = keys[currentIndex - 1];
+        currentCardValue = myCurrentDeck.get(currentCardKey);
+    }
+
     myCardState = CardState.newCard;
     updateCardState();
 }
+
 
 async function addCardToStudyPile() {
-    myStudyPile[myCurrentCardTerm] = myCurrentCardDefinition;
-    delete myCurrentDeck[myCurrentCardTerm];
-    console.log(numOfCards);
-    numOfCards = Object.keys(myCurrentDeck).length;
-    console.log(numOfCards);
-    updateNextCard();
+
 }
 
 async function addCardToDonePile() {
-    myDonePile[myCurrentCardTerm] = myCurrentCardDefinition;
-    delete myCurrentDeck[myCurrentCardTerm];
-    numOfCards = Object.keys(myCurrentDeck).length;
-    updateNextCard();
+
 }
 
 async function resetDecks() {
-    Object.assign(myCurrentDeck, myDonePile, myStudyPile);
-    myDonePile = {};
-    myStudyPile = {};
-    myCurrentDeck = myDeckCollection[myCurrentDeckKey];
-    myCurrentCardTerm = Object.keys(myCurrentDeck)[0];
-    console.log(myCurrentDeck);
-    updateNextCard();
+
 }
 
 /* ========================================================================= 
@@ -240,8 +213,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Active Flash Card Listeners
     currentCardButton.addEventListener("click", updateCardState, false);
-    nextCardButton.addEventListener("click", updateNextCard);
-    previousCardButton.addEventListener("click", updatePreviousCard);
+    nextCardButton.addEventListener("click", moveToNextCard);
+    previousCardButton.addEventListener("click", moveToPreviousCard);
     saveForLaterButton.addEventListener("click", addCardToStudyPile);
     doneWithCardButton.addEventListener("click", addCardToDonePile);
     resetDecksButton.addEventListener("click", resetDecks);

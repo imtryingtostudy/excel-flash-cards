@@ -21,15 +21,13 @@
         </div>
         <div class="button-container">
             <!-- Obtain the users file -->
-            <input type="file" id="inputFile" />
+            <input type="file" id="inputFile" accept=".xlsx" />
             <button class="user-button" id="uploadButton">Upload Flashcards</button>
         </div>
     </div>
 
     <!-- Render the flash card element -->
-    <div id="active-card" class="active-card-view">
-        <label for="active-card">Please upload a file</label>
-    </div>
+    <div id="active-card" class="active-card-view">Please upload a file</div>
 
     <!-- Render next and previous card buttons -->
     <div class="grid-container">
@@ -54,6 +52,7 @@
     <script type="module" src="scripts/server-setup.js"></script>
     <script lang="javascript" src="scripts/dist/xlsx.mini.flow.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/xlsx@0.16.9/dist/xlsx.mini.min.js"></script> -->
 </body>
 
 </html>
