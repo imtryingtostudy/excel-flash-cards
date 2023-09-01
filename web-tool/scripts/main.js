@@ -158,8 +158,9 @@ function moveToNextCard() {
     }
 
     const currentIndex = keys.indexOf(currentCardKey);
-    if (currentIndex !== -1 && currentIndex < keys.length - 1) {
-        currentCardKey = keys[currentIndex + 1];
+    if (currentIndex !== -1) {
+        const nextIndex = (currentIndex + 1) % keys.length; // Wrap to the beginning if at the end
+        currentCardKey = keys[nextIndex];
         currentCardValue = myCurrentDeck.get(currentCardKey);
     }
 
@@ -172,14 +173,15 @@ function moveToPreviousCard() {
     const keys = Array.from(myCurrentDeck.keys());
 
     if (currentCardKey === null) {
-        currentCardKey = keys[keys.length - 1];
+        currentCardKey = keys[(currentIndex + 1) % keys.length];
         currentCardValue = myCurrentDeck.get(currentCardKey);
         return;
     }
 
     const currentIndex = keys.indexOf(currentCardKey);
-    if (currentIndex !== -1 && currentIndex > 0) {
-        currentCardKey = keys[currentIndex - 1];
+    if (currentIndex !== -1) {
+        const prevIndex = (currentIndex - 1 + keys.length) % keys.length; // Wrap to the end if at the beginning
+        currentCardKey = keys[prevIndex];
         currentCardValue = myCurrentDeck.get(currentCardKey);
     }
 
