@@ -9,6 +9,8 @@ const previousCardButton = document.getElementById('previous-card');
 const resetDecksButton = document.getElementById('reset');
 const saveForLaterButton = document.getElementById('save-for-later');
 const uploadButton = document.getElementById('uploadButton');
+const decksContainer = document.getElementById('deck-container');
+const decksContainerElements = [];
 
 /* ========================================================================= 
     Const Data Types 
@@ -21,61 +23,53 @@ const CardState = {
     term: 'term',
     definition: 'definition',
     newCard: 'new-card',
+    empty: 'empty',
 };
 
 /* ========================================================================= 
     Variable Definitions 
 ========================================================================= */
 
-/**
- * @brief A collection of all decks (sheets) read from the provided user file
- */
-var myDeckCollection = new Map();
-
-/**
- * @brief A deck holding all the flash cards flagged for restudying
- */
-var myStudyPile = new Map();
-
-/**
- * @brief A deck holding all the flash cards flagged as studied
- */
-var myDonePile = new Map();
-
-/**
- * @brief The current deck in the collection that is being studied by the user
- */
-var myCurrentDeck = new Map();
-var currentCardValue = null;
+var allDecks = new Map();
+var currentDeckKey = null;
+var currentDeckValue = null;
 var currentCardKey = null;
+var currentCardValue = null;
+var currentCardState = CardState.term;
 
-/**
- * @brief The current number of decks in @myDeckCollection
- */
-var numOfDecks = 0;
-
-/**
- * @brief The current number of cards in @myCurrentDeck
- */
-var numOfCards = 0;
-
-/**
- * @brief The current active face of @myCurrentCard
- */
-var myCardState = CardState.term;
 
 /* ========================================================================= 
     Function Definitions 
 ========================================================================= */
 
-/**
- * @brief Populates our collection information and sets the starting state
- * @param {*} e 
- */
+
+function resetPage() {
+    // Reset JS
+    allDecks = new Map();
+    currentDeckKey = null;
+    currentDeckValue = null;
+    currentCardKey = null;
+    currentCardValue = null;
+    currentCardState = CardState.empty;
+
+    // Reset HTML
+    currentCardButton.textContent = "";
+    decksContainerElements.forEach(deck => {
+        decksContainer.removeChild(deck);
+    });
+    decksContainerElements.length = 0;
+}
+
 async function handleFileAsync(e) {
-    const file = e.target.files[0];
+    // Get File
+    var file = null;
+    file = e.target.files[0];
     if (!file) return;
 
+    // Reset our enviornment now that we've gotten a new file to work with
+    resetPage();
+
+    // Load the file details
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
@@ -85,61 +79,58 @@ async function handleFileAsync(e) {
             workbook.SheetNames.forEach(function (sheetName) {
                 const worksheet = workbook.Sheets[sheetName];
                 const excelData = XLSX.utils.sheet_to_json(worksheet);
-                let deck = new Map();
+                let tempDeck = new Map();
                 excelData.forEach(row => {
                     const key = row[Object.keys(row)[0]];
                     const value = row[Object.keys(row)[1]];
                     // Store all our key-value pairs in a local deck 
-                    deck.set(key, value);
+                    tempDeck.set(key, value);
                 })
-                // Store our deck with our subject (sheet) name in our deck collection
-                myDeckCollection.set(sheetName, deck);
+
+                allDecks.set(sheetName, tempDeck);
+                addDeckIcon(sheetName, tempDeck);
             });
-            console.log(myDeckCollection);
+
+            currentDeckKey = allDecks.entries().next().value[0];
+            currentDeckValue = allDecks.get(currentDeckKey);
+            currentCardKey = currentDeckValue.entries().next().value[0];
+            currentCardValue = currentDeckValue.get(currentCardKey);
+            currentCardState = CardState.newCard;
+            currentCardButton.textContent = `Click to begin studying ${currentDeckKey}`;
+
         } catch (error) {
             console.error("Error reading the file:", error);
         }
 
-        // Now that all the decks have been made, store the data in the users browser
-        localStorage.setItem("decks", JSON.stringify(myDeckCollection));
-
-        // Initialize our starting state
-        initialize();
+        localStorage.setItem("allDecks", JSON.stringify(allDecks));
     };
 
     // Read our excel file
     reader.readAsBinaryString(file);
 }
 
-function initialize() {
-    let myCurrentDeckKey = myDeckCollection.entries().next().value[0]; // Subject 1
-    myCurrentDeck = myDeckCollection.entries().next().value[1]; // Deck 1
 
-    // Store the card state and change signifer text
-    myCardState = CardState.newCard;
-    currentCardButton.textContent = "Click to begin studying [insert subject here]";
-    moveToNextCard();
-}
 
-async function initializeNewDeck() {
-    // TODO
-}
 
 async function updateCardState() {
     if (currentCardButton.textContent.trim() === "Please upload a file") {
         // Do nothing
     } else {
-        switch (myCardState) {
+        switch (currentCardState) {
             case CardState.term:
                 // We are currently displaying our term, update the display to the definition
                 currentCardButton.textContent = currentCardValue;
-                myCardState = CardState.definition;
+                currentCardState = CardState.definition;
                 break;
             case CardState.definition:
             case CardState.newCard:
                 // We are currently displaying our definition, update the display to the ter
                 currentCardButton.textContent = currentCardKey;
-                myCardState = CardState.term;
+                currentCardState = CardState.term;
+                break;
+            case CardState.empty:
+                currentCardButton.textContent = "";
+                currentCardState = CardState.empty;
                 break;
             default:
                 currentCardButton.textContent = "Error (INVALID_STATE_ERROR). Please reload page";
@@ -148,11 +139,11 @@ async function updateCardState() {
 }
 
 function moveToNextCard() {
-    const keys = Array.from(myCurrentDeck.keys());
+    const keys = Array.from(currentDeckValue.keys());
 
-    if (currentCardKey === null) {
+    if (currentCardKey == null) {
         currentCardKey = keys[0];
-        currentCardValue = myCurrentDeck.get(currentCardKey);
+        currentCardValue = currentDeckValue.get(currentCardKey);
         console.log(currentCardValue);
         return;
     }
@@ -161,20 +152,20 @@ function moveToNextCard() {
     if (currentIndex !== -1) {
         const nextIndex = (currentIndex + 1) % keys.length; // Wrap to the beginning if at the end
         currentCardKey = keys[nextIndex];
-        currentCardValue = myCurrentDeck.get(currentCardKey);
+        currentCardValue = currentDeckValue.get(currentCardKey);
     }
 
-    myCardState = CardState.newCard;
+    currentCardState = CardState.newCard;
     updateCardState();
 }
 
 // Function to move backward to the previous element in the map
 function moveToPreviousCard() {
-    const keys = Array.from(myCurrentDeck.keys());
+    const keys = Array.from(currentDeckValue.keys());
 
     if (currentCardKey === null) {
         currentCardKey = keys[(currentIndex + 1) % keys.length];
-        currentCardValue = myCurrentDeck.get(currentCardKey);
+        currentCardValue = currentDeckValue.get(currentCardKey);
         return;
     }
 
@@ -182,24 +173,40 @@ function moveToPreviousCard() {
     if (currentIndex !== -1) {
         const prevIndex = (currentIndex - 1 + keys.length) % keys.length; // Wrap to the end if at the beginning
         currentCardKey = keys[prevIndex];
-        currentCardValue = myCurrentDeck.get(currentCardKey);
+        currentCardValue = currentDeckValue.get(currentCardKey);
     }
 
-    myCardState = CardState.newCard;
+    currentCardState = CardState.newCard;
     updateCardState();
 }
 
 
-async function addCardToStudyPile() {
-
+function addCardToStudyDeck() {
+    if (!studyDeck.has(currentCardKey)) {
+        // Add the current card to the study pile
+        studyDeck.set(currentCardKey, currentCardValue);
+    }
+    moveToNextCard();
 }
 
-async function addCardToDonePile() {
+function addDeckIcon(deck, cards) {
+    // Create our HTML element
+    const icon = document.createElement('button');
+    icon.className = 'deck-icon';
+    icon.textContent = `${deck}`;
 
-}
+    // Link the element to and event listener
+    icon.addEventListener('click', () => {
+        currentDeckKey = icon.textContent;
+        currentDeckValue = allDecks.get(currentDeckKey);
+        currentCardKey = currentDeckValue.entries().next().value[0];
+        currentCardValue = currentDeckValue.get(currentCardKey);
+        currentCardButton.textContent = `Click to begin studying ${currentDeckKey}`;
+        currentCardState = CardState.newCard;
+    });
 
-async function resetDecks() {
-
+    decksContainer.appendChild(icon);
+    decksContainerElements.push(icon);
 }
 
 /* ========================================================================= 
@@ -210,6 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // New File Listeners
     inputFile.addEventListener('change', handleFileAsync, false);
     uploadButton.addEventListener('click', function () {
+        inputFile.value = "";
         inputFile.click();
     });
 
@@ -217,9 +225,9 @@ document.addEventListener('DOMContentLoaded', function () {
     currentCardButton.addEventListener("click", updateCardState, false);
     nextCardButton.addEventListener("click", moveToNextCard);
     previousCardButton.addEventListener("click", moveToPreviousCard);
-    saveForLaterButton.addEventListener("click", addCardToStudyPile);
-    doneWithCardButton.addEventListener("click", addCardToDonePile);
-    resetDecksButton.addEventListener("click", resetDecks);
+    saveForLaterButton.addEventListener("click", addCardToStudyDeck);
+    //doneWithCardButton.addEventListener("click", addCardToDonePile);
+    //resetDecksButton.addEventListener("click", resetDecks);
 });
 
 
