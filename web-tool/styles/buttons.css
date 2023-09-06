@@ -1,59 +1,59 @@
 input[type="file"] {
-    display: none;
+  display: none;
 }
 
 .active-card-view {
-    border: 1px solid black;
-    margin: 10px;
-    padding: 10px;
-    text-align: center;
-    width: 300px;
-    user-select: none;
+  border: 1px solid black;
+  margin: 10px;
+  padding: 10px;
+  text-align: center;
+  width: 300px;
+  user-select: none;
 }
 
 .active-card-view:hover {
-    background: lightblue;
+  background: lightblue;
 }
 
 .button-container {
-    display: flex;
+  display: flex;
 }
 
 .float-container {
-    border: 3px solid #fff;
-    padding: 20px;
+  border: 3px solid #fff;
+  padding: 20px;
 }
 
 .float-child {
-    float: left;
-    padding: 20px;
-    width: 50%;
+  float: left;
+  padding: 20px;
+  width: 50%;
 }
 
 .grid-container {
-    display: grid;
-    grid-gap: 5px;
-    grid-template-columns: 180px 180px;
-    grid-template-rows: auto;
+  display: grid;
+  grid-gap: 5px;
+  grid-template-columns: 180px 180px;
+  grid-template-rows: auto;
 }
 
 .deck-icon {
-    width: 100px;
-    height: 100px;
-    background-color: #3498db;
-    margin: 10px;
-    display: inline-block;
-    text-align: center;
-    line-height: 100px;
-    color: #ffffff;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
+  width: 100px;
+  height: 100px;
+  background-color: #3498db;
+  margin: 10px;
+  display: inline-block;
+  text-align: center;
+  line-height: 100px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .user-button {
-    border: 1px solid #ccc;
-    cursor: pointer;
-    display: inline-block;
-    padding: 6px 12px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  display: inline-block;
+  padding: 6px 12px;
 }

@@ -1,29 +1,30 @@
 <!doctype html>
 <html lang="en-US">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>ImTryingToStudy</title>
     <link rel="stylesheet" href="styles/buttons.css" />
-    <link rel="shortcut icon" href="#">
+    <link rel="shortcut icon" href="#" />
+  </head>
 
-</head>
-
-<body>
+  <body>
     <h3>Excel Flash Cards Tool</h3>
     <div class="grid-container">
-        <div class="button-container">
-            <!-- Store a reference to the statically stored excel template file -->
-            <a href="imtryingtostudy-template.xlsx" download="flash-cards-template.txt">
-                <button class="user-button">Download Template</button>
-            </a>
-        </div>
-        <div class="button-container">
-            <!-- Obtain the users file -->
-            <input type="file" id="inputFile" accept=".xlsx" />
-            <button class="user-button" id="uploadButton">Upload Flashcards</button>
-        </div>
+      <div class="button-container">
+        <!-- Store a reference to the statically stored excel template file -->
+        <a
+          href="imtryingtostudy-template.xlsx"
+          download="flash-cards-template.txt"
+        >
+          <button class="user-button">Download Template</button>
+        </a>
+      </div>
+      <div class="button-container">
+        <!-- Obtain the users file -->
+        <input type="file" id="inputFile" accept=".xlsx" />
+        <button class="user-button" id="uploadButton">Upload Flashcards</button>
+      </div>
     </div>
 
     <!-- Render the flash card element -->
@@ -31,29 +32,40 @@
 
     <!-- Render next and previous card buttons -->
     <div class="grid-container">
-        <div class="button-container">
-            <button class="user-button" id="next-card">Next Card</button>
-            <button class="user-button" id="previous-card">Previous Card</button>
-        </div>
-        <div class="button-container">
-            <button class="user-button" id="save-for-later">Add to Study Deck</button>
-            <button class="user-button" id="done-with-card">Done Studying</button>
-        </div>
+      <div class="button-container">
+        <button class="user-button" id="next-card">Next Card</button>
+        <button class="user-button" id="previous-card">Previous Card</button>
+      </div>
+      <div class="button-container">
+        <button class="user-button" id="add-study-card">
+          Add to Study Deck
+        </button>
+        <button class="user-button" id="delete-study-card">
+          Delete from Study Deck
+        </button>
+      </div>
 
-        <div class="button-container">
-            <button class="user-button" id="reset">Reset Deck</button>
-        </div>
+      <div class="button-container">
+        <button class="user-button" id="reset">Reset Deck</button>
+      </div>
     </div>
 
     <!-- Render our available decks in their own container -->
     <div id="deck-container"></div>
 
-
     <!-- Scripts -->
     <script type="module" src="scripts/main.js"></script>
     <script type="module" src="scripts/server-setup.js"></script>
-    <script lang="javascript" src="scripts/dist/xlsx.mini.flow.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</body>
 
+    <!-- CDN Requests -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script
+      lang="javascript"
+      src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/shim.min.js"
+    ></script>
+    <script
+      lang="javascript"
+      src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.mini.min.js"
+    ></script>
+  </body>
 </html>
