@@ -1,4 +1,4 @@
-import { } from "../constants/resources.js";
+import {} from "../constants/resources.js";
 
 // DOM Elements
 const addStudyCardButton = document.getElementById("add-study-card");
@@ -24,7 +24,7 @@ const DeckAction = {
   REMOVE_CARD: 1,
   NEXT_CARD: 2,
   PREVIOUS_CARD: 3,
-}
+};
 
 const STUDY_DECK_KEY = "Study Pile";
 
@@ -96,104 +96,101 @@ function updateCardState() {
 
 function updateDeck(deckKey, action) {
   switch (action) {
-    case DeckAction.ADD_CARD:
-      {
-        if (deckKey != STUDY_DECK_KEY) {
-          // Do not let the user add a card from their uploaded deck.
-          // This should only be done in their excel sheet.
+    case DeckAction.ADD_CARD: {
+      if (deckKey != STUDY_DECK_KEY) {
+        // Do not let the user add a card from their uploaded deck.
+        // This should only be done in their excel sheet.
+      } else {
+        // Add deck to our collection of decks if it doesn't exist already
+        if (!allDecks.has(STUDY_DECK_KEY)) {
+          allDecks.set(STUDY_DECK_KEY, new Map());
+          addDeckIcon(STUDY_DECK_KEY);
+        }
+
+        // Add our card to the deck if it doesnt exist already
+        if (!allDecks.get(STUDY_DECK_KEY).has(currentCardKey)) {
+          allDecks.get(STUDY_DECK_KEY).set(currentCardKey, currentCardValue);
+        }
+        updateDeck(STUDY_DECK_KEY, DeckAction.NEXT_CARD);
+      }
+      break;
+    }
+    case DeckAction.REMOVE_CARD: {
+      console.log("h1");
+      if (deckKey != STUDY_DECK_KEY) {
+        // Do not let the user remove a card from their uploaded deck.
+        // This should only be done in their excel sheet.
+      } else {
+        console.log("h2");
+        // Remove card from the deck if it hasn't been already
+        if (allDecks.has(STUDY_DECK_KEY)) {
+          console.log("h3");
+          const studyDeck = allDecks.get(STUDY_DECK_KEY);
+
+          if (studyDeck.has(currentCardKey)) {
+            console.log("h4");
+            studyDeck.delete(currentCardKey);
+            currentCardKey = null;
+          }
+
+          if (studyDeck.size == 0) {
+            console.log("h5");
+            removeDeckIcon(STUDY_DECK_KEY);
+          }
         } else {
-          // Add deck to our collection of decks if it doesn't exist already
-          if (!allDecks.has(STUDY_DECK_KEY)) {
-            allDecks.set(STUDY_DECK_KEY, new Map());
-            addDeckIcon(STUDY_DECK_KEY);
-          }
-
-          // Add our card to the deck if it doesnt exist already
-          if (!allDecks.get(STUDY_DECK_KEY).has(currentCardKey)) {
-            allDecks.get(STUDY_DECK_KEY).set(currentCardKey, currentCardValue);
-          }
-          updateDeck(STUDY_DECK_KEY, DeckAction.NEXT_CARD);
+          console.error(
+            "We've attempted to remove the study deck when its already been removed, how'd we get here?"
+          );
         }
-        break;
+        updateDeck(STUDY_DECK_KEY, DeckAction.PREVIOUS_CARD);
       }
-    case DeckAction.REMOVE_CARD:
-      {
-        console.log("h1");
-        if (deckKey != STUDY_DECK_KEY) {
-          // Do not let the user remove a card from their uploaded deck.
-          // This should only be done in their excel sheet.
-        } else {
-          console.log("h2");
-          // Remove card from the deck if it hasn't been already
-          if (allDecks.has(STUDY_DECK_KEY)) {
-            console.log("h3");
-            const studyDeck = allDecks.get(STUDY_DECK_KEY);
-
-            if (studyDeck.has(currentCardKey)) {
-              console.log("h4");
-              studyDeck.delete(currentCardKey);
-              currentCardKey = null;
-            }
-
-            if (studyDeck.size == 0) {
-              console.log("h5");
-              removeDeckIcon(STUDY_DECK_KEY);
-            }
-          } else {
-            console.error("We've attempted to remove the study deck when its already been removed, how'd we get here?");
-          }
-          updateDeck(STUDY_DECK_KEY, DeckAction.PREVIOUS_CARD);
-        }
-        break;
+      break;
+    }
+    case DeckAction.NEXT_CARD: {
+      let keys = Array.from(currentDeckValue.keys());
+      if (currentCardKey == null) {
+        currentCardKey = keys[0];
+        currentCardValue = currentDeckValue.get(currentCardKey);
+        console.log(currentCardValue);
+        return;
       }
-    case DeckAction.NEXT_CARD:
-      {
-        let keys = Array.from(currentDeckValue.keys());
-        if (currentCardKey == null) {
-          currentCardKey = keys[0];
-          currentCardValue = currentDeckValue.get(currentCardKey);
-          console.log(currentCardValue);
-          return;
-        }
 
-        let currentIndex = keys.indexOf(currentCardKey);
-        if (currentIndex !== -1) {
-          console.log("h6");
-          const nextIndex = (currentIndex + 1) % keys.length; // Wrap to the beginning if at the end
-          currentCardKey = keys[nextIndex];
-          currentCardValue = currentDeckValue.get(currentCardKey);
-        }
-
-        currentCardState = CardState.NEW_CARD;
-        updateCardState();
-        break;
+      let currentIndex = keys.indexOf(currentCardKey);
+      if (currentIndex !== -1) {
+        console.log("h6");
+        const nextIndex = (currentIndex + 1) % keys.length; // Wrap to the beginning if at the end
+        currentCardKey = keys[nextIndex];
+        currentCardValue = currentDeckValue.get(currentCardKey);
       }
-    case DeckAction.PREVIOUS_CARD:
-      {
-        let keys = Array.from(currentDeckValue.keys());
 
-        if (currentCardKey === null) {
-          currentCardKey = keys[(currentIndex + 1) % keys.length];
-          currentCardValue = currentDeckValue.get(currentCardKey);
-          return;
-        }
+      currentCardState = CardState.NEW_CARD;
+      updateCardState();
+      break;
+    }
+    case DeckAction.PREVIOUS_CARD: {
+      let keys = Array.from(currentDeckValue.keys());
 
-        let currentIndex = keys.indexOf(currentCardKey);
-        if (currentIndex !== -1) {
-          const prevIndex = (currentIndex - 1 + keys.length) % keys.length; // Wrap to the end if at the beginning
-          currentCardKey = keys[prevIndex];
-          currentCardValue = currentDeckValue.get(currentCardKey);
-        }
-
-        currentCardState = CardState.NEW_CARD;
-        updateCardState();
-        break;
+      if (currentCardKey === null) {
+        currentCardKey = keys[(currentIndex + 1) % keys.length];
+        currentCardValue = currentDeckValue.get(currentCardKey);
+        return;
       }
-    default:
-      {
-        console.error("Invalide action attempted: ", action);
-        break;
+
+      let currentIndex = keys.indexOf(currentCardKey);
+      if (currentIndex !== -1) {
+        const prevIndex = (currentIndex - 1 + keys.length) % keys.length; // Wrap to the end if at the beginning
+        currentCardKey = keys[prevIndex];
+        currentCardValue = currentDeckValue.get(currentCardKey);
       }
+
+      currentCardState = CardState.NEW_CARD;
+      updateCardState();
+      break;
+    }
+    default: {
+      console.error("Invalide action attempted: ", action);
+      break;
+    }
   }
 }
 
@@ -271,10 +268,9 @@ async function handleFileAsync(e) {
         // Update the page do show our first deck
         initializePage(allDecks.entries().next().value[0]);
       } catch (error) {
-        // Something went wrong. Likely some term-definition pair hasn't been filled out. 
+        // Something went wrong. Likely some term-definition pair hasn't been filled out.
         console.error("Error reading data from spreadsheet: \n", error);
       }
-
     } catch (error) {
       console.error("Error loading the file: \n", error);
     }
@@ -296,8 +292,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Active Flash Card Listeners
   currentCardButton.addEventListener("click", updateCardState, false);
-  nextCardButton.addEventListener("click", function () { updateDeck(currentCardKey, DeckAction.NEXT_CARD) }, false);
-  previousCardButton.addEventListener("click", function () { updateDeck(currentCardKey, DeckAction.PREVIOUS_CARD) }, false);
-  addStudyCardButton.addEventListener("click", function () { updateDeck(STUDY_DECK_KEY, DeckAction.ADD_CARD) });
-  deleteStudyCardButton.addEventListener("click", function () { updateDeck(STUDY_DECK_KEY, DeckAction.REMOVE_CARD) });
+  nextCardButton.addEventListener(
+    "click",
+    function () {
+      updateDeck(currentCardKey, DeckAction.NEXT_CARD);
+    },
+    false
+  );
+  previousCardButton.addEventListener(
+    "click",
+    function () {
+      updateDeck(currentCardKey, DeckAction.PREVIOUS_CARD);
+    },
+    false
+  );
+  addStudyCardButton.addEventListener("click", function () {
+    updateDeck(STUDY_DECK_KEY, DeckAction.ADD_CARD);
+  });
+  deleteStudyCardButton.addEventListener("click", function () {
+    updateDeck(STUDY_DECK_KEY, DeckAction.REMOVE_CARD);
+  });
 });
