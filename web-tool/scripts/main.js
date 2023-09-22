@@ -1,4 +1,4 @@
-import {} from "../constants/resources.js";
+import { } from "../constants/resources.js";
 
 // DOM Elements
 const addStudyCardButton = document.getElementById("add-study-card");
@@ -30,11 +30,13 @@ const STUDY_DECK_KEY = "Study Pile";
 
 // State Variables
 let allDecks = new Map();
-let currentDeckKey = null;
-let currentDeckValue = null;
-let currentCardKey = null;
-let currentCardValue = null;
+let myCurrentDeckName = "";
+let myCurrentDeckFlashCards = new Array();
+let myCurrentFlashCardIndex = 0;
+let myCurrentFlashCardTerm = "";
+let myCurrentFlashCardDefinition = "";
 let currentCardState = CardState.TERM;
+let isStudying = false;
 
 // Array to store deck container elements
 const decksContainerElements = [];
@@ -42,10 +44,10 @@ const decksContainerElements = [];
 // Function to reset the page
 function resetPage() {
   allDecks = new Map();
-  currentDeckKey = null;
-  currentDeckValue = null;
-  currentCardKey = null;
-  currentCardValue = null;
+  myCurrentDeckName = null;
+  myCurrentDeckFlashCards = null;
+  myCurrentFlashCardTerm = null;
+  myCurrentFlashCardDefinition = null;
   currentCardState = CardState.EMPTY;
 
   currentCardButton.textContent = "";
@@ -57,30 +59,29 @@ function resetPage() {
 
 function initializePage(myDeckKey) {
   // Update our state to the first loaded deck and render as such
-  currentDeckKey = myDeckKey;
-  currentDeckValue = allDecks.get(currentDeckKey);
-  currentCardKey = currentDeckValue.entries().next().value[0];
-  currentCardValue = currentDeckValue.get(currentCardKey);
+  myCurrentDeckName = myDeckKey;
+  myCurrentDeckFlashCards = allDecks.get(myCurrentDeckName);
+  myCurrentFlashCardIndex = 0;
+  myCurrentFlashCardTerm = myCurrentDeckFlashCards[myCurrentFlashCardIndex][0];
+  myCurrentFlashCardDefinition = myCurrentDeckFlashCards[myCurrentFlashCardIndex][1];
   currentCardState = CardState.NEW_CARD;
-  currentCardButton.textContent = `Click to begin studying ${currentDeckKey}`;
+  currentCardButton.textContent = `Click to begin studying ${myCurrentDeckName}`;
 }
 
 function updateCardState() {
-  console.log("h7");
   if (currentCardButton.textContent.trim() === "Please upload a file") {
     // Do nothing
   } else {
     switch (currentCardState) {
       case CardState.TERM:
         // We are currently displaying our term, update the display to the definition
-        currentCardButton.textContent = currentCardValue;
+        currentCardButton.textContent = myCurrentFlashCardDefinition;
         currentCardState = CardState.DEFINITION;
         break;
       case CardState.DEFINITION:
       case CardState.NEW_CARD:
-        console.log("h8");
         // We are currently displaying our definition, update the display to the ter
-        currentCardButton.textContent = currentCardKey;
+        currentCardButton.textContent = myCurrentFlashCardTerm;
         currentCardState = CardState.TERM;
         break;
       case CardState.EMPTY:
@@ -98,69 +99,69 @@ function updateDeck(deckKey, action) {
   switch (action) {
     case DeckAction.ADD_CARD: {
       if (deckKey != STUDY_DECK_KEY) {
-        // Do not let the user add a card from their uploaded deck.
-        // This should only be done in their excel sheet.
+        // Users can only add cards to the study deck
       } else {
-        // Add deck to our collection of decks if it doesn't exist already
         if (!allDecks.has(STUDY_DECK_KEY)) {
-          allDecks.set(STUDY_DECK_KEY, new Map());
+          // Create the study deck if it hasn't already been made
+          allDecks.set(STUDY_DECK_KEY, new Array());
           addDeckIcon(STUDY_DECK_KEY);
         }
 
-        // Add our card to the deck if it doesnt exist already
-        if (!allDecks.get(STUDY_DECK_KEY).has(currentCardKey)) {
-          allDecks.get(STUDY_DECK_KEY).set(currentCardKey, currentCardValue);
+        let studyDeck = allDecks.get(STUDY_DECK_KEY);
+        if (!studyDeck.includes(myCurrentFlashCardTerm)) {
+          // Add the card to our deck 
+          studyDeck.push([myCurrentFlashCardTerm, myCurrentFlashCardDefinition]);
         }
+
+        // Move on to our next card
         updateDeck(STUDY_DECK_KEY, DeckAction.NEXT_CARD);
       }
       break;
     }
     case DeckAction.REMOVE_CARD: {
-      console.log("h1");
-      if (deckKey != STUDY_DECK_KEY) {
-        // Do not let the user remove a card from their uploaded deck.
-        // This should only be done in their excel sheet.
+      if (currentCardButton.textContent === `Click to begin studying ${myCurrentDeckName}` || currentCardButton.textContent === `Please upload a file`) {
+        console.error(
+          "Cannot remove card until user has begun studying"
+        );
+        return;
+      } else if (deckKey != STUDY_DECK_KEY) {
+        console.error(
+          "Cannot remove card from a non study deck."
+        );
+        return;
+      } else if (!allDecks.has(STUDY_DECK_KEY)) {
+        console.error(
+          "Removing a card from any deck that is not the study deck is prohibited. To update your decks, reupload a new excel file with your edits"
+        );
+        return;
       } else {
-        console.log("h2");
-        // Remove card from the deck if it hasn't been already
-        if (allDecks.has(STUDY_DECK_KEY)) {
-          console.log("h3");
-          const studyDeck = allDecks.get(STUDY_DECK_KEY);
+        let studyDeck = allDecks.get(STUDY_DECK_KEY);
+        // Remove the current active card from the study deck
+        studyDeck.splice(myCurrentFlashCardIndex, 1);
 
-          if (studyDeck.has(currentCardKey)) {
-            console.log("h4");
-            studyDeck.delete(currentCardKey);
-            currentCardKey = null;
-          }
-
-          if (studyDeck.size == 0) {
-            console.log("h5");
-            removeDeckIcon(STUDY_DECK_KEY);
-          }
-        } else {
-          console.error(
-            "We've attempted to remove the study deck when its already been removed, how'd we get here?"
-          );
+        if (studyDeck.length === 0) {
+          console.log(studyDeck.length);
+          // If we've removed all the cards from the study deck, we can delete the deck
+          removeDeckIcon(STUDY_DECK_KEY);
+          // We also want to return back to our first deck instead of onto the previous card
+          initializePage(allDecks.entries().next().value[0])
+          break;
         }
+
+        // Move to our previous card
         updateDeck(STUDY_DECK_KEY, DeckAction.PREVIOUS_CARD);
       }
       break;
     }
     case DeckAction.NEXT_CARD: {
-      let keys = Array.from(currentDeckValue.keys());
-      if (currentCardKey == null) {
-        currentCardKey = keys[0];
-        currentCardValue = currentDeckValue.get(currentCardKey);
-        console.log(currentCardValue);
-        return;
+      if (myCurrentFlashCardTerm === null) {
+        myCurrentFlashCardIndex = 0;
       }
 
-      let currentIndex = keys.indexOf(currentCardKey);
-      if (currentIndex !== -1) {
-        console.log("h6");
-        const nextIndex = (currentIndex + 1) % keys.length; // Wrap to the beginning if at the end
-        currentCardKey = keys[nextIndex];
-        currentCardValue = currentDeckValue.get(currentCardKey);
+      if (myCurrentFlashCardIndex !== -1) {
+        myCurrentFlashCardIndex = (myCurrentFlashCardIndex + 1) % myCurrentDeckFlashCards.length; // Wrap to the beginning if at the end
+        myCurrentFlashCardTerm = myCurrentDeckFlashCards[myCurrentFlashCardIndex][0];
+        myCurrentFlashCardDefinition = myCurrentDeckFlashCards[myCurrentFlashCardIndex][1];
       }
 
       currentCardState = CardState.NEW_CARD;
@@ -168,19 +169,14 @@ function updateDeck(deckKey, action) {
       break;
     }
     case DeckAction.PREVIOUS_CARD: {
-      let keys = Array.from(currentDeckValue.keys());
-
-      if (currentCardKey === null) {
-        currentCardKey = keys[(currentIndex + 1) % keys.length];
-        currentCardValue = currentDeckValue.get(currentCardKey);
-        return;
+      if (myCurrentFlashCardTerm === null) {
+        myCurrentFlashCardIndex = 0;
       }
 
-      let currentIndex = keys.indexOf(currentCardKey);
-      if (currentIndex !== -1) {
-        const prevIndex = (currentIndex - 1 + keys.length) % keys.length; // Wrap to the end if at the beginning
-        currentCardKey = keys[prevIndex];
-        currentCardValue = currentDeckValue.get(currentCardKey);
+      if (myCurrentFlashCardIndex !== -1) {
+        myCurrentFlashCardIndex = (myCurrentFlashCardIndex - 1 + myCurrentDeckFlashCards.length) % myCurrentDeckFlashCards.length; // Wrap to the end if at the beginning
+        myCurrentFlashCardTerm = myCurrentDeckFlashCards[myCurrentFlashCardIndex][0];
+        myCurrentFlashCardDefinition = myCurrentDeckFlashCards[myCurrentFlashCardIndex][1];
       }
 
       currentCardState = CardState.NEW_CARD;
@@ -251,18 +247,19 @@ async function handleFileAsync(e) {
       workbook.SheetNames.forEach((sheetName) => {
         const worksheet = workbook.Sheets[sheetName];
         const excelData = XLSX.utils.sheet_to_json(worksheet);
-        const tempDeck = new Map();
+        const tempDeck = new Array();
 
         excelData.forEach((row) => {
           const key = row[Object.keys(row)[0]];
           const value = row[Object.keys(row)[1]];
-          tempDeck.set(key, value);
+          tempDeck.push([key, value]);
         });
 
         allDecks.set(sheetName, tempDeck);
         addDeckIcon(sheetName);
       });
 
+      console.log(allDecks);
       // Attempt to read the cards from the decks
       try {
         // Update the page do show our first deck
@@ -295,14 +292,14 @@ document.addEventListener("DOMContentLoaded", function () {
   nextCardButton.addEventListener(
     "click",
     function () {
-      updateDeck(currentCardKey, DeckAction.NEXT_CARD);
+      updateDeck(myCurrentFlashCardTerm, DeckAction.NEXT_CARD);
     },
     false
   );
   previousCardButton.addEventListener(
     "click",
     function () {
-      updateDeck(currentCardKey, DeckAction.PREVIOUS_CARD);
+      updateDeck(myCurrentFlashCardTerm, DeckAction.PREVIOUS_CARD);
     },
     false
   );

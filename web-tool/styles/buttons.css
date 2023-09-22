@@ -2,6 +2,10 @@ input[type="file"] {
   display: none;
 }
 
+* {
+  box-sizing: border-box
+}
+
 .active-card-view {
   border: 1px solid black;
   margin: 10px;
@@ -16,7 +20,7 @@ input[type="file"] {
 }
 
 .button-container {
-  display: flex;
+  display: grid;
 }
 
 .float-container {
@@ -33,7 +37,7 @@ input[type="file"] {
 .grid-container {
   display: grid;
   grid-gap: 5px;
-  grid-template-columns: 180px 180px;
+  grid-template-columns: 180px 180px 180px;
   grid-template-rows: auto;
 }
 
@@ -56,4 +60,6 @@ input[type="file"] {
   cursor: pointer;
   display: inline-block;
   padding: 6px 12px;
+  width: 100%;
+  height: 100%;
 }
